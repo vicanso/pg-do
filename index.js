@@ -11,6 +11,7 @@ const Table = require('./lib/table');
 const Transaction = require('./lib/transaction');
 
 const poolSym = Symbol('pool');
+const schemaSym = Symbol('schema');
 
 class PG extends EventEmitter {
   constructor(url) {
@@ -24,6 +25,14 @@ class PG extends EventEmitter {
       options.user = urlInfo.username;
       options.password = urlInfo.password;
     }
+    const max = Number.parseInt(urlInfo.searchParams.get('max'), 10);
+    if (!_.isNaN(max)) {
+      options.max = max;
+    }
+    const idleTimeout = Number.parseInt(urlInfo.searchParams.get('idleTimeout'), 10);
+    if (!_.isNaN(idleTimeout)) {
+      options.idleTimeoutMillis = idleTimeout;
+    }
     options.database = urlInfo.pathname.substring(1);
     const pool = new Pool(options);
     const events = [
@@ -36,9 +45,25 @@ class PG extends EventEmitter {
       pool.on(event, (...args) => this.emit(event, ...args));
     });
     this[poolSym] = pool;
+    this[schemaSym] = {};
   }
   get pool() {
     return this[poolSym];
+  }
+  /**
+   * 增加table的schema
+   *
+   * @param {any} table
+   * @param {any} schema
+   * @return {PG}
+   * @memberof PG
+   */
+  addSchema(table, schema) {
+    if (!table || !schema) {
+      throw new Error('table and schema can not be null');
+    }
+    this[schemaSym][table] = schema;
+    return this;
   }
   /**
    * postgres query function
@@ -58,7 +83,7 @@ class PG extends EventEmitter {
    * @memberof PG
    */
   getTable(name) {
-    return new Table(this, name);
+    return new Table(this, name, this[schemaSym][name]);
   }
   /**
    * 获取用于transaction
@@ -67,7 +92,7 @@ class PG extends EventEmitter {
    */
   async transaction() {
     const client = await this.pool.connect();
-    return new Transaction(client);
+    return new Transaction(client, this[schemaSym]);
   }
 }
 
