@@ -12,6 +12,7 @@ const Transaction = require('./lib/transaction');
 
 const poolSym = Symbol('pool');
 const schemaSym = Symbol('schema');
+const constraintSym = Symbol('constraint');
 
 class PG extends EventEmitter {
   constructor(url) {
@@ -46,6 +47,7 @@ class PG extends EventEmitter {
     });
     this[poolSym] = pool;
     this[schemaSym] = {};
+    this[constraintSym] = {};
   }
   get pool() {
     return this[poolSym];
@@ -55,14 +57,18 @@ class PG extends EventEmitter {
    *
    * @param {any} table
    * @param {any} schema
+   * @param {any} constraint
    * @return {PG}
    * @memberof PG
    */
-  addSchema(table, schema) {
+  addSchema(table, schema, constraint) {
     if (!table || !schema) {
       throw new Error('table and schema can not be null');
     }
     this[schemaSym][table] = schema;
+    if (constraint) {
+      this[constraintSym][table] = constraint;
+    }
     return this;
   }
   /**
@@ -83,7 +89,7 @@ class PG extends EventEmitter {
    * @memberof PG
    */
   getTable(name) {
-    return new Table(this, name, this[schemaSym][name]);
+    return new Table(this, name, this[schemaSym][name], this[constraintSym][name]);
   }
   /**
    * 获取用于transaction

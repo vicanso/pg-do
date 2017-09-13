@@ -10,7 +10,9 @@ describe('PG', () => {
     email: 'varchar(160)',
     age: 'smallint CHECK (age > 0)',
   };
-  client.addSchema('users', userSchema);
+  client.addSchema('users', userSchema, [
+    'CHECK (length(email) > 10)',
+  ]);
   const users = client.getTable(table);
 
   it('check options', () => {
@@ -107,6 +109,14 @@ describe('PG', () => {
     assert.equal(result[2].account, 'a');
   });
 
+  it('find use custom condition', async () => {
+    let result = await users.find({})
+      .addOrderBy('createdAt');
+    result = await users.find({})
+      .where(`"createdAt" > '${result[0].createdAt}'`);
+    assert.equal(result.length, 2);
+  });
+
   it('update', async () => {
     const count = await users.update({}, {
       age: 10,
@@ -166,14 +176,6 @@ describe('PG', () => {
       }, {
         age: 22,
       });
-      // the update will be block
-      users.update({
-        account: 'b',
-      }, {
-        age: 20,
-      }).then(() => console.info('update account "b" to age 20 success'));
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       await transaction.commit();
     } catch (err) {
       await transaction.rollback();
