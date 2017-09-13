@@ -1,5 +1,9 @@
 # pg-do
 
+[![Build Status](https://travis-ci.org/vicanso/pg-do.svg?branch=master)](https://travis-ci.org/vicanso/pg-do)
+[![Coverage Status](https://img.shields.io/coveralls/vicanso/pg-do/master.svg?style=flat)](https://coveralls.io/r/vicanso/pg-do?branch=master)
+[![npm](http://img.shields.io/npm/v/pg-do.svg?style=flat-square)](https://www.npmjs.org/package/pg-do)
+[![Github Releases](https://img.shields.io/npm/dm/pg-do.svg?style=flat-square)](https://github.com/vicanso/pg-do)
 
 ## API
 

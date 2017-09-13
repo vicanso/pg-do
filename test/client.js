@@ -3,7 +3,7 @@ const PG = require('..');
 
 describe('PG', () => {
   const table = 'users';
-  const client = new PG('postgres://test:123456@127.0.0.1:5432/test?max=20&idleTimeout=5000');
+  const client = new PG('postgres://test:123456@127.0.0.1:10001/test?max=20&idleTimeout=5000');
   const userSchema = {
     account: 'varchar(80) unique',
     createdAt: 'varchar(24) NOT NULL',
@@ -26,7 +26,7 @@ describe('PG', () => {
       idleTimeoutMillis,
     } = client.pool.options;
     assert.equal(host, '127.0.0.1');
-    assert.equal(port, '5432');
+    assert.equal(port, '10001');
     assert.equal(user, 'test');
     assert.equal(password, '123456');
     assert.equal(database, 'test');
