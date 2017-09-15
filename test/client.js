@@ -1,4 +1,5 @@
 const assert = require('assert');
+const _ = require('lodash');
 const PG = require('..');
 
 describe('PG', () => {
@@ -7,12 +8,23 @@ describe('PG', () => {
   const userSchema = {
     account: 'varchar(80) unique',
     createdAt: 'varchar(24) NOT NULL',
+    updatedAt: 'varchar(24)',
     email: 'varchar(160)',
     age: 'smallint CHECK (age > 0)',
   };
   client.addSchema('users', userSchema, [
     'CHECK (length(email) > 10)',
   ]);
+  client.hook('insert', (context) => {
+    const createdAt = new Date().toISOString();
+    _.forEach(context.options.inserts, (item) => {
+      /* eslint no-param-reassign:0 */
+      item.createdAt = createdAt;
+    });
+  });
+  client.hook('update', (context) => {
+    context.options.updates.updatedAt = new Date().toISOString();
+  });
   const users = client.getTable(table);
 
   it('check options', () => {
@@ -132,6 +144,21 @@ describe('PG', () => {
       age: 30,
     });
     assert.equal(one, 1);
+  });
+
+  it('group by', async () => {
+    const result = await users.find({})
+      .addField('count(account)', 'age')
+      .addGroupBy('age');
+    assert.equal(result.length, 2);
+  });
+
+  it('group by having', async () => {
+    const result = await users.find({})
+      .addField('count(account)', 'age')
+      .addGroupBy('age')
+      .addHaving('age > 10');
+    assert.equal(result.length, 1);
   });
 
   it('transaction rollback', async () => {

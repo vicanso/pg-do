@@ -13,6 +13,7 @@ const Transaction = require('./lib/transaction');
 const poolSym = Symbol('pool');
 const schemaSym = Symbol('schema');
 const constraintSym = Symbol('constraint');
+const hookSym = Symbol('hook');
 
 class PG extends EventEmitter {
   constructor(url) {
@@ -48,6 +49,7 @@ class PG extends EventEmitter {
     this[poolSym] = pool;
     this[schemaSym] = {};
     this[constraintSym] = {};
+    this[hookSym] = {};
   }
   get pool() {
     return this[poolSym];
@@ -89,7 +91,16 @@ class PG extends EventEmitter {
    * @memberof PG
    */
   getTable(name) {
-    return new Table(this, name, this[schemaSym][name], this[constraintSym][name]);
+    const table = new Table(this, name, this[schemaSym][name]);
+    const constraint = this[constraintSym][name];
+    if (constraint) {
+      table.constraint = constraint;
+    }
+    const hook = this[hookSym];
+    if (hook) {
+      table.hook = hook;
+    }
+    return table;
   }
   /**
    * 获取用于transaction
@@ -99,6 +110,22 @@ class PG extends EventEmitter {
   async transaction() {
     const client = await this.pool.connect();
     return new Transaction(client, this[schemaSym]);
+  }
+  /**
+   * 增加对不同的op的hook函数
+   *
+   * @param {any} op - insert, update等
+   * @param {any} fn - hook函数
+   * @returns
+   * @memberof PG
+   */
+  hook(op, fn) {
+    const hooks = this[hookSym];
+    if (!hooks[op]) {
+      hooks[op] = [];
+    }
+    hooks[op].push(fn);
+    return this;
   }
 }
 
