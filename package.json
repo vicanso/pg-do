@@ -1,6 +1,6 @@
 {
   "name": "pg-do",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The client for postgres",
   "main": "index.js",
   "scripts": {
