@@ -161,6 +161,20 @@ describe('PG', () => {
     assert.equal(result.length, 1);
   });
 
+  it('find by limit offset', async () => {
+    let result = await users.find({})
+      .addOrderBy('account')
+      .limit(1);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].account, 'a');
+    result = await users.find({})
+      .addOrderBy('account')
+      .offset(1)
+      .limit(1);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].account, 'b');
+  });
+
   it('transaction rollback', async () => {
     const transaction = await client.transaction();
     const transactionUsers = transaction.getTable('users');
