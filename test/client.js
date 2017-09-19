@@ -56,12 +56,16 @@ describe('PG', () => {
 
   it('create table', () => users.create());
 
+  it('createIndex', async () => {
+    await users.createIndex(['createdAt']);
+  });
+
   it('insert data', async () => {
     const user = await users.insert({
       account: 'vicanso',
       email: 'vicansocanbico@gmail.com',
       age: 30,
-    }, 'account createdAt');
+    }, '*');
     assert.equal(user.account, 'vicanso');
     assert.equal(user.createdAt.length, 24);
     const found = await users.findOne({
