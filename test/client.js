@@ -11,6 +11,7 @@ describe('PG', () => {
     updatedAt: 'varchar(24)',
     email: 'varchar(160)',
     age: 'smallint CHECK (age > 0)',
+    likes: 'text[]',
   };
   client.addSchema('users', userSchema, [
     'CHECK (length(email) > 10)',
@@ -65,9 +66,11 @@ describe('PG', () => {
       account: 'vicanso',
       email: 'vicansocanbico@gmail.com',
       age: 30,
+      likes: ['noname', 'what'],
     }, '*');
     assert.equal(user.account, 'vicanso');
     assert.equal(user.createdAt.length, 24);
+    assert.equal(user.likes.join(','), 'noname,what');
     const found = await users.findOne({
       account: 'vicanso',
     }, 'account email age createdAt');
@@ -125,6 +128,13 @@ describe('PG', () => {
     assert.equal(result[2].account, 'a');
   });
 
+  it('find by skip', async () => {
+    let result = await users.find({});
+    assert.equal(result.length, 3);
+    result = await users.find({}).skip(1);
+    assert.equal(result.length, 2);
+  });
+
   it('find use custom condition', async () => {
     let result = await users.find({})
       .addOrderBy('createdAt');
@@ -133,12 +143,21 @@ describe('PG', () => {
     assert.equal(result.length, 2);
   });
 
+  it('find by regexp', async () => {
+    const result = await users.find({
+      account: new RegExp('vic', 'i'),
+    });
+    assert.equal(result.length, 1);
+    assert.equal(result[0].account, 'vicanso');
+  });
+
   it('update', async () => {
     const count = await users.update({}, {
       age: 10,
+      likes: ['noname'],
     });
     assert.equal(count, 3);
-    const result = await users.find({
+    let result = await users.find({
       age: 30,
     });
     assert.equal(result.length, 0);
@@ -148,6 +167,9 @@ describe('PG', () => {
       age: 30,
     });
     assert.equal(one, 1);
+    result = await users.find({});
+    assert.equal(result.length, 3);
+    result.forEach(item => assert.equal(item.likes, 'noname'));
   });
 
   it('group by', async () => {
@@ -163,6 +185,17 @@ describe('PG', () => {
       .addGroupBy('age')
       .addHaving('age > 10');
     assert.equal(result.length, 1);
+  });
+
+  it('find by set query options', async () => {
+    const result = await users.find({})
+    .setQueryOptions({
+      skip: 2,
+      limit: 1,
+      order: 'createdAt',
+    });
+    assert.equal(result.length, 1);
+    assert.equal(result[0].account, 'a');
   });
 
   it('find by limit offset', async () => {
